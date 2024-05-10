@@ -1,7 +1,7 @@
 from osgeo import gdal
 gdal.DontUseExceptions()
 
-filename = "Dataset/NE1_LR_LC/NE1_LR_LC.tif"
+filename = "../../Dataset/NE1_LR_LC/NE1_LR_LC.tif"
 dataset = gdal.Open(filename, gdal.GA_ReadOnly)
 if not dataset:
     print("Error")

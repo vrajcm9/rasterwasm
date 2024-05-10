@@ -8,12 +8,48 @@
     Open your browser console to see Pyodide output
     <script type="text/javascript">
       async function main(){
+        let pythonCode = `
+import sys
+#import _gdal
+#import gdal
+from osgeo import gdal
+sys.version
+gdal.DontUseExceptions()
+
+filename = "../../Dataset/NE1_LR_LC/NE1_LR_LC.tif"
+dataset = gdal.Open(filename, gdal.GA_ReadOnly)
+if not dataset:
+    print("Error")
+
+
+print("Driver: {}/{}".format(dataset.GetDriver().ShortName,
+                            dataset.GetDriver().LongName))
+print("Size is {} x {} x {}".format(dataset.RasterXSize,
+                                    dataset.RasterYSize,
+                                    dataset.RasterCount))
+print("Projection is {}".format(dataset.GetProjection()))
+geotransform = dataset.GetGeoTransform()
+if geotransform:
+    print("Origin = ({}, {})".format(geotransform[0], geotransform[3]))
+    print("Pixel Size = ({}, {})".format(geotransform[1], geotransform[5]))
+        `
         let pyodide = await loadPyodide();
-        console.log(pyodide.runPython(`
-            import sys
-            sys.version
-        `));
-        pyodide.runPython("print(4 + 2)");
+        //await pyodide.loadPackage("micropip");
+        //const micropip = pyodide.pyimport("micropip");
+        //await micropip.install('setuptools', keep_going = true);
+        // const gdal = await (await fetch('gdal.py')).text()
+        // const _gdal = await (await fetch('_gdal.py')).text()
+        //let zipResponse = await fetch("osgeo.zip");
+        //let zipBinary = await zipResponse.arrayBuffer();
+        
+        
+        // pyodide.FS.writeFile("/home/pyodide/gdal.py", gdal)
+        // pyodide.FS.writeFile("/home/pyodide/_gdal.py", _gdal)
+        // await pyodide.loadPackage("setuptools");
+        //pyodide.unpackArchive(zipBinary, "zip");       
+        await pyodide.loadPackagesFromImports(pythonCode)
+        let result = await pyodide.runPythonAsync(pythonCode)
+        console.log(result.toJs())
       }
       main();
     </script>

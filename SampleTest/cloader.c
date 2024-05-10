@@ -1,4 +1,4 @@
-#include "gdal_priv.h"
+#include "gdal.h"
 #include "cpl_conv.h" // for CPLMalloc()
 #include <ogrsf_frmts.h>
 
