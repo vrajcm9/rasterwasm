@@ -10,10 +10,11 @@
       async function main(){
         let pythonCode = `
 import sys
-#import _gdal
-#import gdal
-from osgeo import gdal
+import gdal
+import _gdal
 sys.version
+
+
 gdal.DontUseExceptions()
 
 filename = "../../Dataset/NE1_LR_LC/NE1_LR_LC.tif"
@@ -34,20 +35,19 @@ if geotransform:
     print("Pixel Size = ({}, {})".format(geotransform[1], geotransform[5]))
         `
         let pyodide = await loadPyodide();
-        //await pyodide.loadPackage("micropip");
-        //const micropip = pyodide.pyimport("micropip");
-        //await micropip.install('setuptools', keep_going = true);
-        // const gdal = await (await fetch('gdal.py')).text()
-        // const _gdal = await (await fetch('_gdal.py')).text()
+        await pyodide.loadPackage("micropip");
+        const micropip = pyodide.pyimport("micropip");
+        await micropip.install('setuptools', keep_going = true);
+         const gdal = await (await fetch('gdal.py')).text()
+         const _gdal = await (await fetch('_gdal.py')).text()
         //let zipResponse = await fetch("osgeo.zip");
         //let zipBinary = await zipResponse.arrayBuffer();
         
         
-        // pyodide.FS.writeFile("/home/pyodide/gdal.py", gdal)
-        // pyodide.FS.writeFile("/home/pyodide/_gdal.py", _gdal)
-        // await pyodide.loadPackage("setuptools");
+         pyodide.FS.writeFile("/home/pyodide/gdal.py", gdal)
+         pyodide.FS.writeFile("/home/pyodide/_gdal.py", _gdal)
+        //await pyodide.loadPackage("setuptools");
         //pyodide.unpackArchive(zipBinary, "zip");       
-        await pyodide.loadPackagesFromImports(pythonCode)
         let result = await pyodide.runPythonAsync(pythonCode)
         console.log(result.toJs())
       }
