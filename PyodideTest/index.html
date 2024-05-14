@@ -10,8 +10,9 @@
       async function main(){
         let pythonCode = `
 import sys
-import gdal
-import _gdal
+#import gdal
+#import _gdal
+from osgeo import gdal
 sys.version
 
 
@@ -40,14 +41,14 @@ if geotransform:
         await micropip.install('setuptools', keep_going = true);
          const gdal = await (await fetch('gdal.py')).text()
          const _gdal = await (await fetch('_gdal.py')).text()
-        //let zipResponse = await fetch("osgeo.zip");
-        //let zipBinary = await zipResponse.arrayBuffer();
+        let zipResponse = await fetch("osgeo.zip");
+        let zipBinary = await zipResponse.arrayBuffer();
         
         
-         pyodide.FS.writeFile("/home/pyodide/gdal.py", gdal)
-         pyodide.FS.writeFile("/home/pyodide/_gdal.py", _gdal)
+        //  pyodide.FS.writeFile("/home/pyodide/gdal.py", gdal)
+        //  pyodide.FS.writeFile("/home/pyodide/_gdal.py", _gdal)
         //await pyodide.loadPackage("setuptools");
-        //pyodide.unpackArchive(zipBinary, "zip");       
+        pyodide.unpackArchive(zipBinary, "zip");       
         let result = await pyodide.runPythonAsync(pythonCode)
         console.log(result.toJs())
       }
