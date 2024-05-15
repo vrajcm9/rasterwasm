@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+  <head> 
+      <!-- Import as UMD in HTML -->
+      <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
+  </head>
+  <body>
+ 
+    Open your browser console to see Zarr output
+
+    <script>
+        class HTTPFileChunkStore {
+        constructor(url, chunk_offsets) {
+            this.url = url;
+            this.chunk_offsets = chunk_offsets;
+        }
+
+        async getItem(key) {
+            const res = this.chunk_offsets[key];
+
+            if (!res) {
+            throw new zarr.KeyError();
+            }
+            if (!("offset" in res)) {
+            // metadata may just be in the offsets JSON and not in the binary file
+            const meta = JSON.stringify(res);
+            const enc = new TextEncoder().encode(meta);
+            return enc.buffer;
+            }
+            const { offset, size } = res;
+            // make range request
+            const chunk = await fetch(this.url, {
+            headers: { Range: `bytes=${offset}-${offset + size - 1}` }
+            }).then(res => res.arrayBuffer());
+
+            return chunk;
+        }
+
+        async containsItem(key) {
+            const res = this.chunk_offsets[key];
+            if (!res) return false;
+            return true;
+        }
+    }
+    </script>
+    <script>
+    url = "s3://mur-sst/zarr"
+    store = new HTTPFileChunkStore(url, JSON.parse(zchunkstore))
+  </script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+{
+    "chunks": [
+        1,
+        500
+    ],
+    "compressor": null,
+    "dtype": "<f4",
+    "fill_value": 0.0,
+    "filters": null,
+    "order": "C",
+    "shape": [
+        3,
+        1000
+    ],
+    "zarr_format": 2
+}

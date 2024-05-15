@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <head> 
+      <!-- Import as UMD in HTML -->
+      <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
+  </head>
+  <body>
+ 
+    Open your browser console to see Zarr output
+
+    <script>
+      async function exampleUMD() {
+          const store = new zarr.ObjectStore();
+  
+          const myZarrArray = await zarr.ones([3, 4], { store, chunks: [1, 2] });
+          console.log(myZarrArray.chunks); // [1, 2]
+  
+          const arr = await myZarrArray.get([zarr.slice(0, 2)]);
+          console.log(arr instanceof zarr.NestedArray); // true
+          console.log(arr.shape); // [2, 4]
+      }
+  
+      async function test() {
+        const z = await zarr.openArray({
+            store: "http://localhost:8000/",
+            path: "dummy_dataset.zarr",
+            mode: "r"
+        });
+        console.log(z);
+        console.log("Index 0:", await z.get([0, zarr.slice(null, 5)])); // z[0, :5]
+        console.log("Index 1:", await z.get([1, zarr.slice(null, 5)])); // z[1, :5]
+        console.log("Index 2:", await z.get([2, zarr.slice(null, 5)])); // z[2, :5]
+        console.log("All Index:", await z.get([null, zarr.slice(498, 503)])); // z[:, 498:503]
+      }
+
+      test();
+  </script>
+  </body>
+</html>

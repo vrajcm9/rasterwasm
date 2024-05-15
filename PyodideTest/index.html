@@ -2,10 +2,27 @@
 <html>
   <head>
       <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+      <!-- Import as UMD in HTML -->
+      <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
   </head>
   <body>
     Pyodide test page <br>
     Open your browser console to see Pyodide output
+
+    <script>
+      async function exampleUMD() {
+          const store = new zarr.ObjectStore();
+  
+          const myZarrArray = await zarr.ones([3, 4], { store, chunks: [1, 2] });
+          console.log(myZarrArray.chunks); // [1, 2]
+  
+          const arr = await myZarrArray.get([zarr.slice(0, 2)]);
+          console.log(arr instanceof zarr.NestedArray); // true
+          console.log(arr.shape); // [2, 4]
+      }
+  
+      exampleUMD();
+  </script>
     <script type="text/javascript">
       async function main(){
         let pythonCode = `
