@@ -3,6 +3,7 @@
   <head> 
       <!-- Import as UMD in HTML -->
       <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.814.0/aws-sdk.min.js"></script>
   </head>
   <body>
  
@@ -44,8 +45,28 @@
     }
     </script>
     <script>
-    url = "s3://mur-sst/zarr"
-    store = new HTTPFileChunkStore(url, JSON.parse(zchunkstore))
+    //url = "s3://mur-sst/zarr"
+    //store = new HTTPFileChunkStore(url, JSON.parse(zchunkstore))
+    // Configure AWS SDK with your credentials
+        AWS.config.update({
+            accessKeyId: 'zarr-v1',
+            // secretAccessKey: 'YOUR_SECRET_ACCESS_KEY',
+            region: 'us-west-2'
+        });
+
+        const s3 = new AWS.S3();
+
+        function fetchDataFromS3(bucket, key) {
+            return new Promise((resolve, reject) => {
+                s3.getObject({ Bucket: bucket, Key: key }, (error, data) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(data.Body);
+                    }
+                });
+            });
+        }
   </script>
   </body>
 </html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Raster Data Processing with WebAssembly</title>
+    <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
+    <!-- <script src="raster_processor.js"></script> -->
+    <script>
+        async function fetchDataFromS3(bucket, key) {
+            const url = `https://${bucket}.s3.us-west-2.amazonaws.com/${key}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
+            }
+            return await response.arrayBuffer();
+        }
+
+        function loadRasterDataToWasm(data) {
+            const wasmModule = Module;
+            const loadData = wasmModule.cwrap('loadData', null, ['array', 'number']);
+            
+            const uint8Array = new Uint8Array(data);
+            loadData(uint8Array, uint8Array.length);
+        }
+
+        async function processRasterFromS3(bucket, key) {
+            try {
+                const data = await fetchDataFromS3(bucket, key);
+                // loadRasterDataToWasm(data);
+                console.log(data);
+            } catch (error) {
+                console.error('Error fetching data from S3:', error);
+            }
+        }
+         
+      async function exampleUMD() {
+          const store = new zarr.ObjectStore();
+  
+          const myZarrArray = await zarr.ones([3, 4], { store, chunks: [1, 2] });
+          console.log(myZarrArray.chunks); // [1, 2]
+  
+          const arr = await myZarrArray.get([zarr.slice(0, 2)]);
+          console.log(arr instanceof zarr.NestedArray); // true
+          console.log(arr.shape); // [2, 4]
+      }
+ 
+      async function test() {
+        const z = await zarr.openArray({
+            store: "https://mur-sst.s3.us-west-2.amazonaws.com",
+            path: "zarr-v1/sea_ice_fraction",
+            mode: "r"
+        });
+        console.log(z);
+        console.log("Index 0:", await z.get([0, zarr.slice(null, 5)])); // z[0, :5]
+        // console.log("Index 1:", await z.get([1, zarr.slice(null, 5)])); // z[1, :5]
+        // console.log("Index 2:", await z.get([2, zarr.slice(null, 5)])); // z[2, :5]
+        // console.log("All Index:", await z.get([null, zarr.slice(498, 503)])); // z[:, 498:503]
+      }
+        test();
+        // Example usage
+        document.addEventListener('DOMContentLoaded', () => {
+            processRasterFromS3('mur-sst', 'zarr-v1/.zattrs'); // Update the key to the actual file path within the bucket
+        });
+    </script>
+</head>
+<body>
+    <h1>Raster Data Processing with WebAssembly</h1>
+</body>
+</html>
