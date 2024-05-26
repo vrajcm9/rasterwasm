@@ -14,6 +14,28 @@
             return await response.arrayBuffer();
         }
 
+        async function processRasterChunksFromS3(bucket, key, chunkSize) {
+            try {
+                // Get the total file size (Optional: if you know the total file size beforehand)
+                const headResponse = await fetch(`https://${bucket}.s3.us-west-2.amazonaws.com/${key}`, {
+                    method: 'HEAD'
+                });
+                const totalSize = parseInt(headResponse.headers.get('Content-Length'), 10);
+                
+                console.log("Total Size: ", totalSize);
+                // Process each chunk
+                for (let rangeStart = 0; rangeStart < totalSize; rangeStart += chunkSize) {
+                    const rangeEnd = Math.min(rangeStart + chunkSize - 1, totalSize - 1);
+                    const chunk = await fetchChunkFromS3(bucket, key, rangeStart, rangeEnd);
+                    // loadChunkToWasm(chunk);
+                    console.log("Test");
+                    console.log("Chunk", chunk);
+                }
+            } catch (error) {
+                console.error('Error fetching or processing data from S3:', error);
+            }
+        }
+
         function loadRasterDataToWasm(data) {
             const wasmModule = Module;
             const loadData = wasmModule.cwrap('loadData', null, ['array', 'number']);
@@ -26,7 +48,7 @@
             try {
                 const data = await fetchDataFromS3(bucket, key);
                 // loadRasterDataToWasm(data);
-                console.log(data);
+                console.log("All",data);
             } catch (error) {
                 console.error('Error fetching data from S3:', error);
             }
@@ -43,22 +65,40 @@
           console.log(arr.shape); // [2, 4]
       }
  
-      async function test() {
-        const z = await zarr.openArray({
-            store: "https://mur-sst.s3.us-west-2.amazonaws.com",
-            path: "zarr-v1/sea_ice_fraction",
-            mode: "r"
-        });
-        console.log(z);
-        console.log("Index 0:", await z.get([0, zarr.slice(null, 5)])); // z[0, :5]
-        // console.log("Index 1:", await z.get([1, zarr.slice(null, 5)])); // z[1, :5]
-        // console.log("Index 2:", await z.get([2, zarr.slice(null, 5)])); // z[2, :5]
-        // console.log("All Index:", await z.get([null, zarr.slice(498, 503)])); // z[:, 498:503]
+      async function test(chunkSize) {
+        try {
+            const z = await zarr.openArray({
+                store: "https://mur-sst.s3.us-west-2.amazonaws.com",
+                path: "zarr-v1/sea_ice_fraction",
+                mode: "r"
+            });
+            
+            const shape = z.shape;
+            const totalRows = 3;
+            const columns = shape[1];
+            
+            // Process the array in chunks along the first dimension
+            for (let i = 0; i < totalRows; i += chunkSize) {
+                
+                const end = Math.min(i + chunkSize, totalRows);
+                console.log(i);
+                const chunk = await z.get([zarr.slice(i, end), zarr.slice(null, columns)]);
+                
+                // await processChunk(chunk.data.buffer);
+                console.log("Chunk: ", chunk);
+                // console.log("Chunk data buffer: ", chunk.data.buffer);
+            }
+        } 
+            
+            catch (error) {
+                console.error('Error fetching data from S3:', error);
+        }
       }
-        test();
+        test(1);
         // Example usage
         document.addEventListener('DOMContentLoaded', () => {
-            processRasterFromS3('mur-sst', 'zarr-v1/.zattrs'); // Update the key to the actual file path within the bucket
+            processRasterFromS3('mur-sst', 'zarr-v1/'); // Update the key to the actual file path within the bucket
+            processRasterChunksFromS3('mur-sst', 'zarr-v1/', 1024*1024);
         });
     </script>
 </head>

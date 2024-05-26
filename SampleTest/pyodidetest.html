@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+      <!-- Import as UMD in HTML -->
+      <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
+  </head>
+  <body>
+    Pyodide test page <br>
+    Open your browser console to see Pyodide output
+ 
+    <script type="text/javascript">
+      async function main(){
+        let pythonCode = `
+import sys
+import fsspec
+import xarray as xr 
+from fs import open_fs
+sys.version
+ 
+file_location = open_fs('s3://mur-sst/zarr-v1/')
+
+ikey = fsspec.get_mapper(file_location, anon=True)
+
+ds_sst = xr.open_zarr(ikey,consolidated=True)
+
+ds_sst
+        `
+        let pyodide = await loadPyodide(); 
+        await pyodide.loadPackage("micropip");
+        const micropip = pyodide.pyimport("micropip");
+        await micropip.install('setuptools', keep_going = true);  
+        await micropip.install('fsspec', keep_going = true);
+        await micropip.install('xarray', keep_going = true); 
+        await micropip.install('ssl', keep_going = true);
+        let zipResponse = await fetch("fs_s3fs-1.1.1-py2.py3-none-any.whl");
+        await micropip.install('fs_s3fs-1.1.1-py2.py3-none-any.whl', keep_going = true);
+
+        let result = await pyodide.runPythonAsync(pythonCode)
+        console.log(result.toJs())
+      }
+      main();
+    </script>
+  </body>
+</html>
