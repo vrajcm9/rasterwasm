@@ -22,7 +22,7 @@
                 });
                 const totalSize = parseInt(headResponse.headers.get('Content-Length'), 10);
                 
-                console.log("Total Size: ", totalSize);
+                //console.log("Total Size: ", totalSize);
                 // Process each chunk
                 for (let rangeStart = 0; rangeStart < totalSize; rangeStart += chunkSize) {
                     const rangeEnd = Math.min(rangeStart + chunkSize - 1, totalSize - 1);
@@ -74,6 +74,7 @@
             });
             
             const shape = z.shape;
+            console.log("Shape: ",shape);
             const totalRows = 3;
             const columns = shape[1];
             
