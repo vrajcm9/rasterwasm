@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Raster Data Processing</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+    <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="raster_library.js" defer></script>
+    <script src="packages.js" defer></script>
+</head>
+<body>
+    <body>
+        <!-- Page Load Spinner -->
+        <div id="page-loader" class="loader-container">
+            <div class="spinner"></div>
+        </div>
+    
+        <header>
+            <h1>Advanced Raster Data Processing</h1>
+        </header>
+    
+        <main>
+            <div class="card controls-card">
+                <h2>Controls <span class="tooltip" title="Configure your data processing options">❓</span></h2>
+                <div class="input-group">
+                    <label for="variable-select">Select Variable:</label>
+                    <select id="variable-select">
+                        <option value="t2m">t2m</option>
+                        <option value="lsm">lsm</option>
+                        <option value="u10">u10</option>
+                        <option value="u100">u100</option>
+                        <option value="v10">v10</option>
+                        <option value="v100">v100</option>
+                    </select>
+                </div>
+    
+                <div class="input-group">
+                    <label for="time-range">Time Range:</label>
+                    <div class="range-inputs">
+                        <input type="datetime-local" id="time-start" name="time-start">
+                        <input type="datetime-local" id="time-end" name="time-end">
+                    </div>
+                </div>
+    
+                <div class="input-group">
+                    <label for="latitude">Latitude:</label>
+                    <input type="number" id="latitude" name="latitude" min="-90" max="90" step="0.25" placeholder="-47">
+                </div>
+    
+                <div class="input-group">
+                    <label for="longitude">Longitude:</label>
+                    <input type="number" id="longitude" name="longitude" min="0" max="359.75" step="0.25" placeholder="145">
+                </div>
+    
+                <div class="button-container">
+                    <button class="action-button" onclick="loadData()">Load Data</button>
+                    <button class="action-button primary" onclick="processAndPlot()">Process and Plot</button>
+                </div>
+            </div>
+    
+            <div class="card" id="plot-card">
+                <h2>Plot <span class="tooltip" title="This is where your plot will appear">❓</span></h2>
+                <div id="plot"></div>
+            </div>
+    
+            <div class="card" id="raster-card">
+                <h2>Raster Data Statistics</h2>
+                <div id="rasterdata" class="output-data"></div>
+                <div id="raster-min" class="output-data"></div>
+                <div id="raster-max" class="output-data"></div>
+                <div id="raster-mean" class="output-data"></div>
+                <div id="raster-std" class="output-data"></div>
+                <div id="raster-variance" class="output-data"></div>
+                <div id="raster-median" class="output-data"></div>
+                <div id="raster-sum" class="output-data"></div>
+            </div>
+    
+            <div class="card">
+              <h2>Execution Time</h2>
+              <div id="package-loading-time" class="output-data"></div>
+              <div id="data-loading-time" class="output-data"></div>
+              <div id="processing-time" class="output-data"></div>
+            </div>
+        </main>
+    
+        <footer>
+            <p>© 2024 Raster Data Processing Research Project</p>
+        </footer>
+    
+        <!-- Modal for Detailed Information -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+                <div id="modal-body">
+                    <!-- Dynamic content goes here -->
+                </div>
+            </div>
+        </div>
+    
+        <!-- Data Loading Spinner -->
+        <div id="data-loader" class="loader-container hidden">
+            <div class="spinner"></div>
+        </div>
+    
+</body>
+</html>

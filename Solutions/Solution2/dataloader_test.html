@@ -1,0 +1,112 @@
+<!doctype html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+    <!-- Import as UMD in HTML -->
+    <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
+</head>
+<body>
+    Pyodide test page <br>
+    Open your browser console to see Pyodide output
+    <div id="plot"></div>
+    <script type="text/javascript">
+        async function main(){
+            let pythonCode = `
+from js import document, fetch
+import io
+import base64
+import matplotlib.pyplot as plt
+import numpy as np
+import xarray as xr
+import zarr
+from zarr.storage import BaseStore, KVStore
+import asyncio
+
+class HTTPStore(BaseStore):
+    def __init__(self, url):
+        self.url = url.rstrip('/') + '/'
+        self.cache = {}
+
+    async def fetch_data(self, key):
+        response = await fetch(self.url + key)
+        if response.status != 200:
+            response.raise_for_status()
+        data = await response.arrayBuffer()
+        return bytes(data)
+
+    async def fetch_and_cache(self, key):
+        if key not in self.cache:
+            self.cache[key] = await self.fetch_data(key)
+        return self.cache[key]
+
+    async def __getitem__(self, key):
+        return memoryview(await self.fetch_and_cache(key))
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError("HTTPStore is read-only")
+
+    def __delitem__(self, key):
+        raise NotImplementedError("HTTPStore is read-only")
+
+    async def __contains__(self, key):
+        response = await fetch(self.url + key, {'method': 'HEAD'})
+        return response.status == 200
+
+    def __len__(self):
+        raise NotImplementedError("HTTPStore does not support len")
+
+    def __iter__(self):
+        raise NotImplementedError("HTTPStore does not support iteration")
+
+async def create_plot():
+    store = HTTPStore('http://localhost:9000/testbucket/output.zarr/')
+    kvstore = KVStore(store)
+
+    ds_sst = await xr.open_zarr(kvstore, consolidated=True)
+
+    print(ds_sst)
+    
+    plt.rcParams['figure.figsize'] = 12, 6
+
+    lsm_timeseries = ds_sst['lsm'].sel(time = slice('2024-01-01','2024-01-03'),
+                                        latitude  = -47,
+                                        longitude  = 145
+                                       ).load()
+
+    sst_climatology = lsm_timeseries.groupby('time.dayofyear').mean('time',keep_attrs=True,skipna=False)
+
+    sst_anomaly = lsm_timeseries.groupby('time.dayofyear')-sst_climatology
+
+    sst_anomaly_monthly = lsm_timeseries.resample(time='1MS').mean(keep_attrs=True,skipna=False)                                           
+
+    fig, ax = plt.subplots()
+    lsm_timeseries.plot(ax=ax, label='LSM Timeseries')
+    sst_anomaly.plot(ax=ax, label='SST Anomaly')
+    sst_anomaly_monthly.plot(ax=ax, label='SST Anomaly Monthly')
+
+    ax.legend()
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    img_str = "data:image/png;base64," + base64.b64encode(buf.read()).decode('utf-8')
+    buf.close()
+
+    html_str = f'<img src="{img_str}" />'
+    document.getElementById('plot').innerHTML = html_str
+
+asyncio.create_task(create_plot())
+            `
+            let pyodide = await loadPyodide(); 
+            await pyodide.loadPackage(['matplotlib', 'numpy', 'micropip']);
+            const micropip = pyodide.pyimport("micropip");
+            await micropip.install('setuptools');
+            await micropip.install('xarray');
+            await micropip.install('requests');
+            await micropip.install('zarr');
+            await pyodide.runPythonAsync(pythonCode)
+        }
+        main();
+    </script>
+</body>
+</html>

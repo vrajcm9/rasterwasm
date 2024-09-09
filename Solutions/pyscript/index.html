@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyScript Example with Execution Time</title>
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css">
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+</head>
+<body>
+
+    <h1>PyScript Example with Data Processing, Plotting, and Execution Time</h1>
+
+    <!-- Section for the plot -->
+    <div id="plot"></div>
+
+    <!-- Section for raster data statistics -->
+    <div id="rasterdata">
+        <p id="raster-min"></p>
+        <p id="raster-max"></p>
+        <p id="raster-mean"></p>
+        <p id="raster-median"></p>
+        <p id="raster-std"></p>
+        <p id="raster-variance"></p>
+        <p id="raster-sum"></p>
+    </div>
+
+    <!-- Section to display the execution time -->
+    <p id="execution-time"></p>
+
+    <!-- PyScript Config to load required packages -->
+    <py-config>
+        packages = [
+            "matplotlib",
+            "numpy",
+            "xarray",
+            "requests",
+            "zarr",
+            "setuptools"
+        ]
+    </py-config>
+
+    <!-- PyScript code to load and process data -->
+    <py-script>
+
+        import xarray as xr
+        import requests
+        import zarr
+        from zarr.storage import BaseStore, KVStore
+        import matplotlib.pyplot as plt
+        import numpy as np
+        import io
+        import base64
+        import time
+
+        # Start timing the execution
+        start_time = time.time()
+
+        class HTTPStore(BaseStore):
+            def __init__(self, url):
+                self.url = url.rstrip('/') + '/'
+
+            def __getitem__(self, key):
+                r = requests.get(self.url + key)
+                r.raise_for_status()
+                return r.content
+
+            def __setitem__(self, key, value):
+                raise NotImplementedError("HTTPStore is read-only")
+
+            def __delitem__(self, key):
+                raise NotImplementedError("HTTPStore is read-only")
+
+            def __contains__(self, key):
+                async def check_key():
+                    response = await fetch(self.url + key, {'method': 'HEAD'})
+                    return response.status == 200
+
+                return asyncio.run(check_key())
+
+            def __len__(self):
+                raise NotImplementedError("HTTPStore does not support len")
+
+            def __iter__(self):
+                raise NotImplementedError("HTTPStore does not support iteration")
+
+        store = HTTPStore('http://localhost:9000/testbucket/output.zarr/')
+        kvstore = KVStore(store)
+        ds_sst = xr.open_zarr(kvstore, consolidated=True)
+
+        # Processing and plotting code
+        plt.rcParams['figure.figsize'] = 12, 6
+
+        t2m_timeseries = ds_sst['t2m'].sel(time=slice('2024-01-01','2024-01-03'),
+                                            latitude=-47,
+                                            longitude=145).load()                                        
+
+        fig, ax = plt.subplots()
+        t2m_timeseries.plot(ax=ax, label='T2M Timeseries')
+
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png')
+        buf.seek(0)
+        img_str = "data:image/png;base64," + base64.b64encode(buf.read()).decode('utf-8')
+        buf.close()
+
+        # Insert the plot into the HTML
+        plot_div = Element('plot')
+        plot_div.element.innerHTML = f'<img src="{img_str}" />'
+
+        # Generating random raster data
+        time_arr = np.array(['2024-01-01', '2024-01-02', '2024-01-03'], dtype='datetime64[ns]')
+        latitude = np.array([-47, -46, -45])
+        longitude = np.array([144, 145, 146])
+        data = np.random.rand(len(time_arr), len(latitude), len(longitude))
+
+        # Calculate raster statistics
+        raster_data_min = np.min(data)
+        raster_data_max = np.max(data)
+        raster_data_mean = np.mean(data)
+        raster_data_median = np.median(data)
+        raster_data_std = np.std(data)
+        raster_data_variance = np.var(data)
+        raster_data_sum = np.sum(data)
+
+        # Update HTML with statistics
+        Element('raster-min').element.innerText = f"Min: {raster_data_min}"
+        Element('raster-max').element.innerText = f"Max: {raster_data_max}"
+        Element('raster-mean').element.innerText = f"Mean: {raster_data_mean}"
+        Element('raster-median').element.innerText = f"Median: {raster_data_median}"
+        Element('raster-std').element.innerText = f"Standard Deviation: {raster_data_std}"
+        Element('raster-variance').element.innerText = f"Variance: {raster_data_variance}"
+        Element('raster-sum').element.innerText = f"Sum: {raster_data_sum}"
+
+        # End timing the execution
+        end_time = time.time()
+        execution_time = end_time - start_time
+
+        # Display the execution time
+        Element('execution-time').element.innerText = f"Execution Time: {execution_time:.2f} seconds"
+
+    </py-script>
+
+</body>
+</html>

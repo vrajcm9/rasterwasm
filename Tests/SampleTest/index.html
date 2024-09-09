@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Raster Data Processing with WebAssembly</title>
+    <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
+    <!-- <script src="raster_processor.js"></script> -->
+    <script> 
+
+        function loadRasterDataToWasm(data) {
+            const wasmModule = Module;
+            const loadData = wasmModule.cwrap('loadData', null, ['array', 'number']);
+            
+            const uint8Array = new Uint8Array(data);
+            loadData(uint8Array, uint8Array.length);
+        } 
+      async function exampleUMD() {
+          const store = new zarr.ObjectStore();
+  
+          const myZarrArray = await zarr.ones([3, 4], { store, chunks: [1, 2] });
+          console.log(myZarrArray.chunks); // [1, 2]
+  
+          const arr = await myZarrArray.get([zarr.slice(0, 2)]);
+          console.log(arr instanceof zarr.NestedArray); // true
+          console.log(arr.shape); // [2, 4]
+      }
+ 
+      async function test(chunkSize) {
+        try {
+            // const z = await zarr.openArray({
+            //     store: "https://mur-sst.s3.us-west-2.amazonaws.com",
+            //     path: "zarr-v1/sea_ice_fraction",
+            //     mode: "r"
+            // });
+
+            const z = await zarr.openArray({
+                store: "http://localhost:9000",
+                path: "testbucket/output.zarr/v10",
+                mode: "r"
+            });
+            
+            const shape = z.shape;
+            console.log("MShape: ",shape);
+            const totalRows = 3;
+            const columns = shape[1];
+            
+            // Process the array in chunks along the first dimension
+            for (let i = 0; i < totalRows; i += chunkSize) {
+                
+                const end = Math.min(i + chunkSize, totalRows);
+                console.log(i);
+                const chunk = await z.get([zarr.slice(i, end), zarr.slice(null, columns)]);
+                
+                // await processChunk(chunk.data.buffer);
+                console.log("Chunk: ", chunk);
+                // console.log("Chunk data buffer: ", chunk.data.buffer);
+            }
+        } 
+            
+            catch (error) {
+                console.error('Error fetching data from S3:', error);
+        }
+      }
+        test(1); 
+    </script>
+</head>
+<body>
+    <h1>Raster Data Processing with WebAssembly2</h1>
+</body>
+</html>

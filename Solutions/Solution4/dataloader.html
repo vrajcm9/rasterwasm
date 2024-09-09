@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+      <!-- Import as UMD in HTML -->
+      <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+      <script src="packages.js" type="text/javascript"></script>
+  </head>
+  <body>
+    
+    Open your browser console to see Pyodide output
+    <!-- <button onclick="loadPackages()">Load Packages</button> -->
+    <button onclick="loadData()">Load Data</button>
+    <button onclick="processAndPlot()">Process and Plot</button>
+    <div id="plot"></div>
+  </body>
+</html>

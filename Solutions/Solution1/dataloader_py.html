@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+  <head>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+      <!-- Import as UMD in HTML -->
+      <script src="https://unpkg.com/zarr/zarr.umd.js"></script>
+  </head>
+  <body>
+    Pyodide test page <br>
+    Open your browser console to see Pyodide output
+ 
+    <script type="text/javascript">
+      async function main(){
+        let pythonCode = `
+import xarray as xr
+import requests
+import zarr
+from zarr.storage import BaseStore, KVStore
+
+class HTTPStore(BaseStore):
+    def __init__(self, url):
+        self.url = url.rstrip('/') + '/'
+
+    def __getitem__(self, key):
+        r = requests.get(self.url + key)
+        r.raise_for_status()
+        return r.content
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError("HTTPStore is read-only")
+
+    def __delitem__(self, key):
+        raise NotImplementedError("HTTPStore is read-only")
+
+    def __contains__(self, key):
+        r = requests.head(self.url + key)
+        return r.status_code == 200
+
+    def __len__(self):
+        raise NotImplementedError("HTTPStore does not support len")
+
+    def __iter__(self):
+        raise NotImplementedError("HTTPStore does not support iteration")
+
+store = HTTPStore('http://localhost:9000/testbucket/output.zarr/')
+kvstore = KVStore(store)
+
+ds_sst = xr.open_zarr(kvstore, consolidated=True)
+
+print(ds_sst)
+        `
+        let pyodide = await loadPyodide(); 
+        await pyodide.loadPackage("micropip");
+        const micropip = pyodide.pyimport("micropip");
+        await micropip.install('setuptools');
+        await micropip.install('xarray');
+        await micropip.install('requests');
+        await micropip.install('zarr');
+        let result = await pyodide.runPythonAsync(pythonCode)
+        console.log(result.toJs())
+      }
+      main();
+    </script>
+  </body>
+</html>
