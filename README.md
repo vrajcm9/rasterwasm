@@ -27,7 +27,7 @@ This project demonstrates the implementation of raster data loading and slicing 
   - `index.html`: Main HTML file for the user interface.
   - `packages.js`: JavaScript dependencies, package handling, data loader and visualization.
   - `styles.css`: Styling for the user interface.
-  - `raster_library.js`: Core library for raster data processing implemented by Linniya.
+  - `raster_library.js`: Core library for raster data processing.
 
 ## Installation & Setup
 
