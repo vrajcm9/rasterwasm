@@ -34,7 +34,7 @@ This project demonstrates the implementation of raster data loading and slicing 
 ### Running Locally
 1. Clone this repository:
     ```bash
-    git clone https://dbgit.prakinf.tu-ilmenau.de/students/2024-research-project-vishnu-raj/software.git
+    git clone https://github.com/vrajcm9/rasterwasm.git
     ```
 2. Download raster data from Climate Data Store(CDS) using the python script provided:
     ```bash
